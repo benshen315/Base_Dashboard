@@ -75,12 +75,32 @@ function add(w){
 }
 function render(items){clearPanels();grid.batchUpdate();try{items.forEach(add)}finally{grid.batchUpdate(false)}syncLock()}
 function layout(){return grid.save(false).map(({id,x,y,w,h})=>({id,component:findItem(id).dataset.component,x,y,w,h}))}
-function syncLock(){grid.setStatic(locked);$('#add').disabled=locked;$('.grid-stack').querySelectorAll('.remove').forEach(b=>b.disabled=locked)}
-function setConfig(data){config=data;catalog=new Map(data.components.map(c=>[c.id,c]));$('#title').textContent=data.title;$('#catalog').replaceChildren(...data.components.map(c=>{const o=node('option','',c.title);o.value=c.id;return o}));}
+function syncLock(){grid.setStatic(locked);$('#add').disabled=locked;$('.grid-stack').querySelectorAll('.remove').forEach(b=>b.disabled=locked);document.querySelectorAll('.app-tile').forEach(b=>b.disabled=locked)}
+function setConfig(data){config=data;catalog=new Map(data.components.map(c=>[c.id,c]));$('#title').textContent=data.title;$('#catalog').replaceChildren(...data.components.map(c=>{const o=node('option','',c.title);o.value=c.id;return o}));renderLauncher();}
+
+const appSymbols={metric:'◴',map:'⌖',bar:'▥',list:'☷',text:'✎',iframe:'▣'};
+function showView(view){
+ const desktop=view==='desktop';$('#desktop').hidden=!desktop;$('#workspace').hidden=desktop;
+ $('#desktop-tab').setAttribute('aria-pressed',String(desktop));$('#workspace-tab').setAttribute('aria-pressed',String(!desktop));
+ if(!desktop&&grid){requestAnimationFrame(()=>{grid.onResize();window.dispatchEvent(new Event('resize'))})}
+}
+function launchComponent(id){
+ showView('workspace');
+ const existing=Array.from(document.querySelectorAll('.grid-stack-item')).find(el=>el.dataset.component===id);
+ if(existing){existing.scrollIntoView({behavior:'smooth',block:'center'});existing.classList.remove('app-highlight');requestAnimationFrame(()=>existing.classList.add('app-highlight'));message('已開啟「'+catalog.get(id).title+'」。')}
+ else addRegistered(id);
+}
+function renderLauncher(){
+ $('#app-launcher').replaceChildren(...Array.from(catalog.values(),c=>{
+  const tile=node('button','app-tile');tile.type='button';tile.dataset.component=c.id;tile.setAttribute('aria-label','開啟 '+c.title);tile.disabled=locked;
+  const icon=node('span','app-icon icon-'+c.type,appSymbols[c.type]);icon.setAttribute('aria-hidden','true');
+  tile.append(icon,node('span','app-name',c.title),node('span','app-kind',{metric:'數值',map:'地圖',bar:'圖表',list:'清單',text:'筆記',iframe:'網頁'}[c.type]));tile.onclick=()=>launchComponent(c.id);return tile;
+ }));
+}
 
 let pendingComponents=null,registering=false;
 function downloadJSON(value,name){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const a=node('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-function addRegistered(id){if(locked){message('請先解鎖版面。');return}add({id:id+'-'+(crypto.randomUUID?crypto.randomUUID():Date.now()),component:id,w:4,h:3});syncLock();message('已加入組件，保存版面後可在重新整理時還原。')}
+function addRegistered(id){if(locked){message('請先解鎖版面。');return}showView('workspace');add({id:id+'-'+(crypto.randomUUID?crypto.randomUUID():Date.now()),component:id,w:4,h:3});syncLock();message('已加入組件，保存版面後可在重新整理時還原。')}
 function refreshRegistry(){
  $('#component-count').textContent='（'+catalog.size+'）';
  $('#registered-components').replaceChildren(...Array.from(catalog.values(),c=>{const row=node('div','registry-row');const label=node('div');label.append(node('strong','',c.title),node('small','muted',c.id+' · '+c.type));const b=button('加入工作台',()=>{addRegistered(c.id);$('#component-menu').close()});b.disabled=locked;row.append(label,b);return row}));
@@ -116,18 +136,20 @@ async function start(){
    document.body.classList.add('standalone');const c=catalog.get(singleId);if(!c)throw Error('組件不存在');$('#title').textContent=c.title;const single=$('#single');single.hidden=false;single.className='single-panel';single.append(panel(c,new URLSearchParams(location.search).get('instance')||singleId,true));single.firstChild.style.height='100%';message('獨立組件頁面 · 內容由 components.json 載入');return;
   }
   if(!window.GridStack)throw Error('GridStack 本地資源載入失敗，請確認 static/vendor/gridstack 檔案完整');
+  showView('workspace');
   grid=GridStack.init({column:12,cellHeight:88,margin:8,minRow:6,draggable:{handle:'.panel-head',cancel:'button,iframe,input,select,textarea'},resizable:{handles:'se'}});
   let initial=config.widgets,initialMessage='已載入 JSON 預設版面。';
   try{const saved=await api('/api/layout');initial=saved.widgets;initialMessage='已自動還原保存的版面。'}
   catch(error){if(error.status!==404)initialMessage='保存版面無法還原，已使用 JSON 預設版面。'+error.message}
-  render(initial);message(initialMessage);
+  showView('workspace');render(initial);showView('desktop');message(initialMessage);
   grid.on('change',()=>message('版面已變更，按保存版面保留設定。'));
   initMenu();
+  $('#desktop-tab').onclick=()=>showView('desktop');$('#workspace-tab').onclick=()=>showView('workspace');
   $('#add').onclick=()=>{const id=$('#catalog').value;add({id:id+'-'+Date.now(),component:id,w:4,h:3});syncLock();message('已加入組件。')};
   $('#save').onclick=async()=>{try{await api('/api/layout',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({widgets:layout()})});message('版面已保存至伺服器。')}catch(e){message(e.message)}};
   $('#load').onclick=async()=>{try{const d=await api('/api/layout');render(d.widgets);message('已還原伺服器版面。')}catch(e){message(e.message)}};
   $('#reset').onclick=()=>{render(config.widgets);message('已還原 JSON 預設版面，保存後才覆寫已保存版面。')};
-  $('#lock').onclick=e=>{locked=!locked;syncLock();e.target.textContent=locked?'解鎖版面':'鎖定版面';message(locked?'版面已鎖定。':'版面已解鎖。')};
+  $('#lock').onclick=e=>{locked=!locked;syncLock();$('#lock-label').textContent=locked?'解鎖':'鎖定';$('#lock').setAttribute('aria-label',locked?'解鎖版面':'鎖定版面');message(locked?'版面已鎖定。':'版面已解鎖。')};
   $('#dashboard-full').onclick=()=>full(document.documentElement);
   $('#import').onclick=()=>$('#file').click();
   $('#file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>2*1024*1024)throw Error('JSON 檔案不可超過 2 MB');const d=JSON.parse(await file.text());const validated=await api('/api/components',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});setConfig(validated);render(validated.widgets);message('已匯入組件 JSON 並保存至 data/components.json。')}catch(error){message(error.message)}finally{e.target.value=''}};

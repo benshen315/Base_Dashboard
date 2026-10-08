@@ -38,6 +38,7 @@ def open_dashboard(page,server):
     cfg=json.loads((ROOT/'dashboard.example.json').read_text())
     assert page.request.put(server+'/api/components',data=cfg).ok
     page.goto(server)
+    page.locator('#workspace-tab').click()
     expect(page.locator('.grid-stack-item')).to_have_count(6)
     page.wait_for_function('Math.abs(document.querySelector("[gs-id=map]").getBoundingClientRect().height - 264) < 1')
     return cfg
@@ -149,6 +150,7 @@ def test_refresh_automatically_restores_saved_layout(page,server):
     next(w for w in saved if w['id']=='note')['h']=3
     assert page.request.put(server+'/api/layout',data={'widgets':saved}).ok
     page.reload()
+    page.locator('#workspace-tab').click()
     expect(page.locator('#status')).to_have_text('已自動還原保存的版面。')
     expect(item(page,'note')).to_have_attribute('gs-h','3')
 
@@ -156,6 +158,7 @@ def test_saved_empty_dashboard_stays_empty_after_refresh(page,server):
     open_dashboard(page,server)
     assert page.request.put(server+'/api/layout',data={'widgets':[]}).ok
     page.reload()
+    page.locator('#workspace-tab').click()
     expect(page.locator('#status')).to_have_text('已自動還原保存的版面。')
     expect(page.locator('.grid-stack-item')).to_have_count(0)
     page.locator('#catalog').select_option('note');page.locator('#add').click()
@@ -168,6 +171,7 @@ def test_stale_saved_layout_uses_config_defaults(page,server):
     cfg['widgets']=[w for w in cfg['widgets'] if w['component']!='map']
     assert page.request.put(server+'/api/components',data=cfg).ok
     page.reload()
+    page.locator('#workspace-tab').click()
     expect(page.locator('#status')).to_contain_text('保存版面引用了已移除的組件')
     expect(page.locator('.grid-stack-item')).to_have_count(5)
     assert page.request.get(server+'/api/layout').status==409
@@ -192,6 +196,7 @@ def test_menu_upload_register_and_add_preserves_layout(page,server,tmp_path):
     page.locator('#save').click()
     expect(page.locator('#status')).to_contain_text('版面已保存')
     page.reload()
+    page.locator('#workspace-tab').click()
     expect(page.locator('.grid-stack-item')).to_have_count(7)
     page.locator('#menu-open').click()
     page.locator('#component-file').set_input_files(path)
@@ -209,3 +214,24 @@ def test_menu_invalid_upload_and_lock(page,server,tmp_path):
     expect(page.locator('.registry-row')).to_have_count(6)
     page.keyboard.press('Escape')
     expect(page.locator('#component-menu')).not_to_be_visible()
+
+def test_app_desktop_launcher_and_mobile(page,server):
+    open_dashboard(page,server)
+    page.locator('#desktop-tab').click()
+    expect(page.locator('#desktop')).to_be_visible()
+    expect(page.locator('#workspace')).not_to_be_visible()
+    expect(page.locator('.app-tile')).to_have_count(6)
+    page.screenshot(path='test-results/app-desktop.png',full_page=True)
+    page.locator('.app-tile[data-component="note"]').click()
+    expect(page.locator('#workspace')).to_be_visible()
+    expect(page.locator('.grid-stack-item')).to_have_count(6)
+    page.locator('#desktop-tab').click()
+    page.locator('#lock').click()
+    expect(page.locator('.app-tile').first).to_be_disabled()
+    page.locator('#lock').click()
+    page.set_viewport_size({'width':390,'height':844})
+    expect(page.locator('.app-tile').first).to_be_visible()
+    assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+    page.screenshot(path='test-results/app-mobile.png',full_page=True)
+    page.locator('#menu-open').click()
+    expect(page.locator('#component-menu')).to_be_visible()
