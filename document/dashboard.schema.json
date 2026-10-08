@@ -1,0 +1,144 @@
+{
+  "$defs": {
+    "Component": {
+      "properties": {
+        "id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "metric",
+            "map",
+            "bar",
+            "list",
+            "text",
+            "iframe"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "additionalProperties": true,
+          "title": "Data",
+          "type": "object"
+        },
+        "fullscreen": {
+          "default": true,
+          "title": "Fullscreen",
+          "type": "boolean"
+        },
+        "popout": {
+          "default": true,
+          "title": "Popout",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "type"
+      ],
+      "title": "Component",
+      "type": "object"
+    },
+    "Widget": {
+      "properties": {
+        "id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "component": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Component",
+          "type": "string"
+        },
+        "x": {
+          "maximum": 11,
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        },
+        "w": {
+          "maximum": 12,
+          "minimum": 1,
+          "title": "W",
+          "type": "integer"
+        },
+        "h": {
+          "maximum": 100,
+          "minimum": 1,
+          "title": "H",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "title": "Widget",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "title": {
+      "default": "工程 Dashboard",
+      "maxLength": 200,
+      "title": "Title",
+      "type": "string"
+    },
+    "components": {
+      "items": {
+        "$ref": "#/$defs/Component"
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Components",
+      "type": "array"
+    },
+    "widgets": {
+      "items": {
+        "$ref": "#/$defs/Widget"
+      },
+      "maxItems": 100,
+      "title": "Widgets",
+      "type": "array"
+    }
+  },
+  "required": [
+    "components",
+    "widgets"
+  ],
+  "title": "DashboardConfig",
+  "type": "object"
+}

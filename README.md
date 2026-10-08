@@ -4,6 +4,12 @@
 
 Python 3.11+，無需 Node.js / npm。GridStack 10.3.1 隨專案存放於 static/vendor/gridstack，啟動後無需連網載入 CDN。第三方授權文字保留在該目錄。
 
+## 專案文件
+
+- [專案基線與目前邊界](document/PROJECT_BASELINE.md)
+- [JSON 組件格式與擴充方式](document/COMPONENT_GUIDE.md)
+- [後端模型 JSON Schema](document/dashboard.schema.json)
+
 ## 啟動
 
 在本目錄開啟終端機：
