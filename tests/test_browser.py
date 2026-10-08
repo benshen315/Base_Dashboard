@@ -207,7 +207,8 @@ def test_menu_upload_register_and_add_preserves_layout(page,server,tmp_path):
 def test_menu_invalid_upload_and_lock(page,server,tmp_path):
     open_dashboard(page,server)
     page.locator('#lock').click();page.locator('#menu-open').click()
-    expect(page.locator('.registry-row button').first).to_be_disabled()
+    expect(page.locator('.registry-row').first.get_by_role('button',name='加入工作台',exact=True)).to_be_disabled()
+    expect(page.locator('.registry-row').first.get_by_role('button',name='改名',exact=True)).to_be_enabled()
     path=tmp_path/'bad.json';path.write_text(json.dumps({'id':'bad','title':'Bad data','type':'bar','data':{'values':['wrong']}}))
     page.locator('#component-file').set_input_files(path);page.locator('#component-register').click()
     expect(page.locator('#menu-status')).to_contain_text('values 必須是有限數字')
