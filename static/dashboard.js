@@ -8,7 +8,14 @@ const channel='BroadcastChannel' in window?new BroadcastChannel('olit-dashboard'
 function node(tag,className,text){const n=document.createElement(tag);if(className)n.className=className;if(text!==undefined)n.textContent=String(text);return n}
 function message(s){status.textContent=s}
 async function api(url,options={}){
- const r=await fetch(url,options);if(!r.ok){let detail;try{detail=(await r.json()).detail}catch{}const fieldError=Array.isArray(detail)?detail.find(e=>typeof e.msg==='string')?.msg:null;throw Error(typeof detail==='string'?detail:fieldError?fieldError.replace(/^Value error, /,''):'JSON 資料格式不正確或 API 失敗（'+r.status+'）')}return r.json();
+ const r=await fetch(url,options);
+ if(!r.ok){
+  let detail;try{detail=(await r.json()).detail}catch{}
+  const fieldError=Array.isArray(detail)?detail.find(e=>typeof e.msg==='string')?.msg:null;
+  const error=new Error(typeof detail==='string'?detail:fieldError?fieldError.replace(/^Value error, /,''):'JSON 資料格式不正確或 API 失敗（'+r.status+'）');
+  error.status=r.status;throw error;
+ }
+ return r.json();
 }
 function drawBody(c,body){
  body.replaceChildren();const d=c.data||{};
@@ -81,7 +88,10 @@ async function start(){
   }
   if(!window.GridStack)throw Error('GridStack 本地資源載入失敗，請確認 static/vendor/gridstack 檔案完整');
   grid=GridStack.init({column:12,cellHeight:88,margin:8,minRow:6,draggable:{handle:'.panel-head',cancel:'button,iframe,input,select,textarea'},resizable:{handles:'se'}});
-  render(config.widgets);message('已載入 components.json。拖曳標題列，或按全螢幕／獨立視窗。');
+  let initial=config.widgets,initialMessage='已載入 JSON 預設版面。';
+  try{const saved=await api('/api/layout');initial=saved.widgets;initialMessage='已自動還原保存的版面。'}
+  catch(error){if(error.status!==404)initialMessage='保存版面無法還原，已使用 JSON 預設版面。'+error.message}
+  render(initial);message(initialMessage);
   grid.on('dragstart',()=>{dragging=true;lastPointer=null;$('#drop-zone').classList.remove('idle')});
   grid.on('dragstop',(event,el)=>{const hit=inZone(lastPointer);dragging=false;$('#drop-zone').className='popout-zone idle';if(hit)popout(el.gridstackNode.id)});
   grid.on('change',()=>message('版面已變更，按保存版面保留設定。'));

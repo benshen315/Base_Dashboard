@@ -35,7 +35,7 @@ Base Dashboard 是可重用的網頁儀表板基礎專案。使用者以 JSON �
 
 ## 資料流程
 
-啟動頁面讀取 GET /api/components，繪製 JSON 的 widgets 預設布局。保存版面執行 PUT /api/layout；還原版面執行 GET /api/layout。重新整理頁面目前仍載入 JSON 預設布局，需按「還原版面」才載入保存布局。
+啟動頁面讀取 GET /api/components，繪製 JSON 的 widgets 預設布局。保存版面執行 PUT /api/layout；還原版面執行 GET /api/layout。開啟或重新整理頁面時會自動嘗試還原保存布局；尚未保存時使用 JSON 預設布局。保存布局損壞或引用已移除組件時，顯示原因並回到 JSON 預設布局，保留原保存檔供使用者處理。
 
 匯入 JSON 執行 PUT /api/components，驗證通過後覆寫配置檔並重建主畫面。若舊布局引用了已刪除的組件，還原 API 回傳 409，提示使用者重設布局。
 

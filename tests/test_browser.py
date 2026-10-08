@@ -11,7 +11,7 @@ from playwright.sync_api import expect
 
 ROOT=Path(__file__).resolve().parents[1]
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def server(tmp_path_factory):
     data=tmp_path_factory.mktemp('dashboard-data')
     (data/'components.json').write_bytes((ROOT/'dashboard.example.json').read_bytes())
@@ -151,3 +151,35 @@ def test_invalid_json_import_keeps_dashboard_usable(page,server,tmp_path):
     ]
     page.locator('#catalog').select_option('note');page.locator('#add').click()
     expect(page.locator('.grid-stack-item')).to_have_count(7)
+
+def test_refresh_automatically_restores_saved_layout(page,server):
+    cfg=open_dashboard(page,server)
+    expect(page.locator('#status')).to_have_text('已載入 JSON 預設版面。')
+    saved=json.loads(json.dumps(cfg['widgets']))
+    next(w for w in saved if w['id']=='note')['h']=3
+    assert page.request.put(server+'/api/layout',data={'widgets':saved}).ok
+    page.reload()
+    expect(page.locator('#status')).to_have_text('已自動還原保存的版面。')
+    expect(item(page,'note')).to_have_attribute('gs-h','3')
+
+def test_saved_empty_dashboard_stays_empty_after_refresh(page,server):
+    open_dashboard(page,server)
+    assert page.request.put(server+'/api/layout',data={'widgets':[]}).ok
+    page.reload()
+    expect(page.locator('#status')).to_have_text('已自動還原保存的版面。')
+    expect(page.locator('.grid-stack-item')).to_have_count(0)
+    page.locator('#catalog').select_option('note');page.locator('#add').click()
+    expect(page.locator('.grid-stack-item')).to_have_count(1)
+
+def test_stale_saved_layout_uses_config_defaults(page,server):
+    cfg=open_dashboard(page,server)
+    assert page.request.put(server+'/api/layout',data={'widgets':cfg['widgets']}).ok
+    cfg['components']=[c for c in cfg['components'] if c['id']!='map']
+    cfg['widgets']=[w for w in cfg['widgets'] if w['component']!='map']
+    assert page.request.put(server+'/api/components',data=cfg).ok
+    page.reload()
+    expect(page.locator('#status')).to_contain_text('保存版面引用了已移除的組件')
+    expect(page.locator('.grid-stack-item')).to_have_count(5)
+    assert page.request.get(server+'/api/layout').status==409
+    page.locator('#save').click();expect(page.locator('#status')).to_contain_text('版面已保存')
+    assert page.request.get(server+'/api/layout').ok

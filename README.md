@@ -74,7 +74,7 @@ JSON 提供組件資料及配置，不執行任意 HTML/JavaScript。新增 type
 
 - 拖曳標題列調整位置；右下角調整大小。
 - 下拉選擇組件後按「加入組件」，× 可移除實例。
-- 「保存版面」透過 PUT /api/layout 寫入 data/layout.json；「還原版面」透過 GET /api/layout 載入。
+- 「保存版面」透過 PUT /api/layout 寫入 data/layout.json；開啟或刷新主頁時自動還原，也可按「還原版面」手動載入。尚未保存時使用 JSON 預設布局；保存布局失效時提示原因並回到預設布局。
 - 「預設版面」回到 components.json 的 widgets，不直接覆寫已保存版面。
 - 「下載組件 JSON」匯出目前組件定義和畫面布局，可再次匯入。
 - 「全螢幕」將單一組件切換至瀏覽器 Fullscreen API，Esc 退出；若 API 不可用，則放大至網頁範圍。
