@@ -79,7 +79,7 @@ async function start(){
   if(singleId){
    document.body.classList.add('standalone');const c=catalog.get(singleId);if(!c)throw Error('組件不存在');$('#title').textContent=c.title;const single=$('#single');single.hidden=false;single.className='single-panel';single.append(panel(c,new URLSearchParams(location.search).get('instance')||singleId,true));single.firstChild.style.height='100%';message('獨立組件頁面 · 內容由 components.json 載入');return;
   }
-  if(!window.GridStack)throw Error('GridStack 載入失敗，請確認網路可連至 cdn.jsdelivr.net');
+  if(!window.GridStack)throw Error('GridStack 本地資源載入失敗，請確認 static/vendor/gridstack 檔案完整');
   grid=GridStack.init({column:12,cellHeight:88,margin:8,minRow:6,draggable:{handle:'.panel-head',cancel:'button,iframe,input,select,textarea'},resizable:{handles:'se'}});
   render(config.widgets);message('已載入 components.json。拖曳標題列，或按全螢幕／獨立視窗。');
   grid.on('dragstart',()=>{dragging=true;lastPointer=null;$('#drop-zone').classList.remove('idle')});

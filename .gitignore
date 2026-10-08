@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 .idea/
 data/layout.json
+
+.pytest_cache/
+test-results/

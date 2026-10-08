@@ -2,7 +2,7 @@
 
 可重用的儀表板基礎專案，採 FastAPI + 原生 HTML/CSS/JavaScript + GridStack。
 
-Python 3.11+，無需 Node.js / npm。GridStack 10.3.1 從 CDN 載入，瀏覽器需要連網。
+Python 3.11+，無需 Node.js / npm。GridStack 10.3.1 隨專案存放於 static/vendor/gridstack，啟動後無需連網載入 CDN。第三方授權文字保留在該目錄。
 
 ## 啟動
 
@@ -88,3 +88,17 @@ JSON 提供組件資料及配置，不執行任意 HTML/JavaScript。新增 type
 - GET /widget/{component_id}：獨立組件網頁。
 
 所有內容均為示意。本機單人 Demo，所有瀏覽器共用一份配置與版面，未加入登入和使用者隔離。
+
+## 自動驗證
+
+開發測試額外依賴（一般啟動不需要）：
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m playwright install --with-deps chromium
+python -m pytest tests -q --browser chromium
+```
+
+GitHub Actions 會在 main 更新及 Pull Request 執行 API 和 Chromium 操作測試。失敗時保存截圖及 trace，供除錯。測試使用暫存資料目錄，不會改動正式 components.json 或 layout.json。
+
+可透過 BASE_DASHBOARD_DATA_DIR 指定配置與版面檔的儲存目錄；該目錄需先放入 components.json。未設定時維持使用專案 data/。

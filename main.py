@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, model_validator
 
 BASE = Path(__file__).resolve().parent
-DATA = BASE / 'data'
+DATA = Path(os.environ.get('BASE_DASHBOARD_DATA_DIR', str(BASE / 'data')))
 DATA.mkdir(exist_ok=True)
 LAYOUT = DATA / 'layout.json'
 CONFIG = DATA / 'components.json'
