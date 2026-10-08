@@ -79,3 +79,29 @@ def test_valid_component_data_round_trips(client,kind,data):
     cfg['components'][0].update(type=kind,data=data)
     assert client.put('/api/components',json=cfg).status_code==200
     assert client.get('/api/components').json()['components'][0]['data']==data
+
+
+def test_register_appends_and_preserves_saved_layout(client):
+    before=client.get('/api/components').json()
+    client.put('/api/layout',json={'widgets':before['widgets']})
+    saved=main.LAYOUT.read_bytes()
+    upload={'components':[{'id':'new-note','title':'New','type':'text','data':{'text':'Hello'}},{'id':'new-metric','title':'Count','type':'metric','data':{'value':42}}]}
+    response=client.post('/api/components/register',json=upload)
+    assert response.status_code==201
+    after=client.get('/api/components').json()
+    assert after['components'][:len(before['components'])]==before['components']
+    assert len(after['components'])==len(before['components'])+2
+    assert after['widgets']==before['widgets']
+    assert main.LAYOUT.read_bytes()==saved
+    assert client.get('/widget/new-note').status_code==200
+
+@pytest.mark.parametrize('components,status',[
+    ([{'id':'note','title':'Conflict','type':'text'}],409),
+    ([{'id':'new','title':'One','type':'text'},{'id':'new','title':'Two','type':'text'}],409),
+    ([{'id':'new','title':'Bad','type':'list','data':{'items':[None]}}],422),
+    ([],422),
+])
+def test_registration_failure_is_atomic(client,components,status):
+    before=main.CONFIG.read_bytes()
+    assert client.post('/api/components/register',json={'components':components}).status_code==status
+    assert main.CONFIG.read_bytes()==before

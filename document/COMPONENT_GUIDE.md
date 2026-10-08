@@ -83,3 +83,9 @@ components 可有 1–100 個定義，widgets 可有 0–100 個實例。空 wid
 目前 type 與 data 定義顯示內容，尚未定義 API URL、更新頻率或即時訂閱欄位。接入新資料來源時，由後端提供資料 API，再讓 renderer 讀取及更新；不在 JSON 內放入可執行 JavaScript。
 
 對 Three.js 或 Cesium 等 Viewer，容器大小改變時需更新渲染尺寸。獨立視窗是另一個頁面與執行實例，若要延續相機位置、選取或其他狀態，需另設可序列化的狀態交換，v0.1 尚未提供。
+
+## MENU 上傳與註冊
+
+開啟「MENU · 組件管理」，下載範例或上傳 JSON。可上傳單一組件物件，或 `{ "components": [...] }` 批次組件。確認註冊後追加至組件清單，不覆寫原組件或目前版面。相同 ID、無效資料或超過 100 個組件會拒絕整批註冊；修正 ID 後可重試。註冊完成後按「加入工作台」，再保存版面。
+
+API：POST /api/components/register，JSON body 為 `{ "components": [...] }`；成功回傳 201 及完整配置。此功能註冊既有 metric、text、list、bar、map、iframe 類型的 JSON 組件。獨立視窗由組件按鈕開啟，已移除拖出提示區。

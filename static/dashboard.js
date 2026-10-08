@@ -2,7 +2,7 @@
 const $=s=>document.querySelector(s);
 const status=$('#status');
 const detached=new Map();
-let grid,config,catalog=new Map(),locked=false,pendingPopup=null,dragging=false,lastPointer=null;
+let grid,config,catalog=new Map(),locked=false,pendingPopup=null;
 const singleId=location.pathname.startsWith('/widget/')?decodeURIComponent(location.pathname.slice(8)):null;
 const channel='BroadcastChannel' in window?new BroadcastChannel('olit-dashboard'):null;
 function node(tag,className,text){const n=document.createElement(tag);if(className)n.className=className;if(text!==undefined)n.textContent=String(text);return n}
@@ -77,9 +77,38 @@ function render(items){clearPanels();grid.batchUpdate();try{items.forEach(add)}f
 function layout(){return grid.save(false).map(({id,x,y,w,h})=>({id,component:findItem(id).dataset.component,x,y,w,h}))}
 function syncLock(){grid.setStatic(locked);$('#add').disabled=locked;$('.grid-stack').querySelectorAll('.remove').forEach(b=>b.disabled=locked)}
 function setConfig(data){config=data;catalog=new Map(data.components.map(c=>[c.id,c]));$('#title').textContent=data.title;$('#catalog').replaceChildren(...data.components.map(c=>{const o=node('option','',c.title);o.value=c.id;return o}));}
-function inZone(p){if(!p)return false;const r=$('#drop-zone').getBoundingClientRect();return p.x>=r.left&&p.x<=r.right&&p.y>=r.top&&p.y<=r.bottom}
-function pointer(e){const point=e.touches?.[0]??e;lastPointer={x:point.clientX,y:point.clientY};if(dragging)$('#drop-zone').classList.toggle('active',inZone(lastPointer))}
-['pointermove','mousemove','touchmove'].forEach(type=>document.addEventListener(type,pointer,{passive:true,capture:true}));
+
+let pendingComponents=null,registering=false;
+function downloadJSON(value,name){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const a=node('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function addRegistered(id){if(locked){message('請先解鎖版面。');return}add({id:id+'-'+(crypto.randomUUID?crypto.randomUUID():Date.now()),component:id,w:4,h:3});syncLock();message('已加入組件，保存版面後可在重新整理時還原。')}
+function refreshRegistry(){
+ $('#component-count').textContent='（'+catalog.size+'）';
+ $('#registered-components').replaceChildren(...Array.from(catalog.values(),c=>{const row=node('div','registry-row');const label=node('div');label.append(node('strong','',c.title),node('small','muted',c.id+' · '+c.type));const b=button('加入工作台',()=>{addRegistered(c.id);$('#component-menu').close()});b.disabled=locked;row.append(label,b);return row}));
+}
+function initMenu(){
+ $('#menu-open').onclick=()=>{refreshRegistry();$('#component-menu').showModal()};
+ $('#menu-close').onclick=()=>$('#component-menu').close();
+ $('#component-upload').onclick=()=>$('#component-file').click();
+ $('#component-example').onclick=()=>downloadJSON({id:'custom-note',title:'我的組件',type:'text',data:{text:'從 JSON 上傳並註冊的組件'},fullscreen:true,popout:true},'component.example.json');
+ $('#component-file').onchange=async e=>{
+  const file=e.target.files[0];if(!file)return;
+  pendingComponents=null;$('#upload-preview').hidden=true;$('#menu-status').textContent='';
+  try{
+   if(file.size>2*1024*1024)throw Error('JSON 檔案不可超過 2 MB');
+   const d=JSON.parse(await file.text());const items=Array.isArray(d?.components)?d.components:[d];
+   if(!items.length||items.length>100||items.some(c=>!c||typeof c!=='object'||typeof c.id!=='string'||typeof c.title!=='string'||typeof c.type!=='string'))throw Error('請上傳包含 id、title、type 的組件 JSON');
+   pendingComponents=items;$('#upload-list').replaceChildren(...items.map(c=>node('li','',c.title+'（'+c.id+' · '+c.type+'）')));$('#upload-preview').hidden=false;$('#menu-status').textContent='已讀取 '+items.length+' 個組件，請確認註冊。';
+  }catch(error){$('#menu-status').textContent=error.message}finally{e.target.value=''}
+ };
+ $('#component-register').onclick=async()=>{
+  if(!pendingComponents||registering)return;
+  registering=true;$('#component-register').disabled=true;$('#component-upload').disabled=true;
+  try{const count=pendingComponents.length;const data=await api('/api/components/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({components:pendingComponents})});setConfig(data);refreshRegistry();pendingComponents=null;$('#upload-preview').hidden=true;$('#menu-status').textContent='已成功註冊 '+count+' 個組件。可從下方加入工作台。';message('組件已註冊，原有版面保持不變。')}
+  catch(error){$('#menu-status').textContent=error.message}
+  finally{registering=false;$('#component-register').disabled=false;$('#component-upload').disabled=false}
+ };
+}
+
 async function start(){
  try{
   const data=await api('/api/components');setConfig(data);
@@ -92,9 +121,8 @@ async function start(){
   try{const saved=await api('/api/layout');initial=saved.widgets;initialMessage='已自動還原保存的版面。'}
   catch(error){if(error.status!==404)initialMessage='保存版面無法還原，已使用 JSON 預設版面。'+error.message}
   render(initial);message(initialMessage);
-  grid.on('dragstart',()=>{dragging=true;lastPointer=null;$('#drop-zone').classList.remove('idle')});
-  grid.on('dragstop',(event,el)=>{const hit=inZone(lastPointer);dragging=false;$('#drop-zone').className='popout-zone idle';if(hit)popout(el.gridstackNode.id)});
   grid.on('change',()=>message('版面已變更，按保存版面保留設定。'));
+  initMenu();
   $('#add').onclick=()=>{const id=$('#catalog').value;add({id:id+'-'+Date.now(),component:id,w:4,h:3});syncLock();message('已加入組件。')};
   $('#save').onclick=async()=>{try{await api('/api/layout',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({widgets:layout()})});message('版面已保存至伺服器。')}catch(e){message(e.message)}};
   $('#load').onclick=async()=>{try{const d=await api('/api/layout');render(d.widgets);message('已還原伺服器版面。')}catch(e){message(e.message)}};

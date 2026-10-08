@@ -122,20 +122,10 @@ def test_blocked_popup_retries_without_losing_component(page,server):
     info.value.close()
     expect(item(page).locator('.map')).to_be_visible(timeout=5000)
 
-def test_drag_to_popout_zone(page,server):
+def test_drag_zone_removed(page,server):
     open_dashboard(page,server)
-    head=item(page).locator('.panel-title').bounding_box()
-    page.mouse.move(head['x']+20,head['y']+10);page.mouse.down()
-    page.mouse.move(head['x']+30,head['y']+25,steps=4)
-    zone=page.locator('#drop-zone').bounding_box()
-    page.mouse.move(zone['x']+zone['width']/2,zone['y']+zone['height']/2,steps=20);page.mouse.up()
-    page.wait_for_function('document.querySelector(".detached") || !document.querySelector("#retry-popup").hidden')
-    if page.locator('#retry-popup').is_visible():
-        with page.expect_popup() as info:page.locator('#retry-popup').click()
-        info.value.close()
-    else:
-        item(page).get_by_role('button',name='收回組件').click()
-    expect(item(page).locator('.map')).to_be_visible(timeout=5000)
+    expect(page.locator('#drop-zone')).to_have_count(0)
+    expect(item(page).get_by_role('button',name='獨立視窗',exact=True)).to_be_visible()
 
 def test_invalid_json_import_keeps_dashboard_usable(page,server,tmp_path):
     original=open_dashboard(page,server)
@@ -183,3 +173,39 @@ def test_stale_saved_layout_uses_config_defaults(page,server):
     assert page.request.get(server+'/api/layout').status==409
     page.locator('#save').click();expect(page.locator('#status')).to_contain_text('版面已保存')
     assert page.request.get(server+'/api/layout').ok
+
+def test_menu_upload_register_and_add_preserves_layout(page,server,tmp_path):
+    open_dashboard(page,server)
+    original=page.evaluate('layout()')
+    page.locator('#menu-open').click()
+    component={'id':'uploaded-note','title':'Uploaded note','type':'text','data':{'text':'Registered content'}}
+    path=tmp_path/'component.json';path.write_text(json.dumps(component))
+    page.locator('#component-file').set_input_files(path)
+    expect(page.locator('#upload-preview')).to_be_visible()
+    page.locator('#component-register').click()
+    expect(page.locator('#menu-status')).to_contain_text('已成功註冊 1 個組件')
+    assert page.evaluate('layout()')==original
+    row=page.locator('.registry-row').filter(has_text='Uploaded note')
+    row.get_by_role('button',name='加入工作台').click()
+    expect(page.locator('.grid-stack-item')).to_have_count(7)
+    expect(page.locator('.grid-stack-item').last.locator('.body')).to_have_text('Registered content')
+    page.locator('#save').click()
+    expect(page.locator('#status')).to_contain_text('版面已保存')
+    page.reload()
+    expect(page.locator('.grid-stack-item')).to_have_count(7)
+    page.locator('#menu-open').click()
+    page.locator('#component-file').set_input_files(path)
+    page.locator('#component-register').click()
+    expect(page.locator('#menu-status')).to_contain_text('組件 ID 已註冊')
+    expect(page.locator('.registry-row')).to_have_count(7)
+
+def test_menu_invalid_upload_and_lock(page,server,tmp_path):
+    open_dashboard(page,server)
+    page.locator('#lock').click();page.locator('#menu-open').click()
+    expect(page.locator('.registry-row button').first).to_be_disabled()
+    path=tmp_path/'bad.json';path.write_text(json.dumps({'id':'bad','title':'Bad data','type':'bar','data':{'values':['wrong']}}))
+    page.locator('#component-file').set_input_files(path);page.locator('#component-register').click()
+    expect(page.locator('#menu-status')).to_contain_text('values 必須是有限數字')
+    expect(page.locator('.registry-row')).to_have_count(6)
+    page.keyboard.press('Escape')
+    expect(page.locator('#component-menu')).not_to_be_visible()

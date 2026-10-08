@@ -2,6 +2,7 @@
 import json
 import os
 import tempfile
+from threading import Lock
 from pathlib import Path
 from typing import Annotated, Literal
 from fastapi import FastAPI, HTTPException
@@ -14,6 +15,7 @@ DATA = Path(os.environ.get('BASE_DASHBOARD_DATA_DIR', str(BASE / 'data')))
 DATA.mkdir(exist_ok=True)
 LAYOUT = DATA / 'layout.json'
 CONFIG = DATA / 'components.json'
+CONFIG_LOCK = Lock()
 app = FastAPI(title='Base Dashboard', version='0.1')
 app.mount('/static', StaticFiles(directory=BASE / 'static'), name='static')
 Identifier = Annotated[str, Field(min_length=1, max_length=100, pattern=r'^[A-Za-z0-9_-]+$')]
@@ -101,6 +103,9 @@ class DashboardConfig(BaseModel):
             raise ValueError('面板引用了不存在的組件')
         return self
 
+class ComponentRegistration(BaseModel):
+    components: Annotated[list[Component], Field(min_length=1, max_length=100)]
+
 def atomic_write(path, value):
     temp = None
     try:
@@ -133,8 +138,26 @@ def components():
 
 @app.put('/api/components', response_model=DashboardConfig)
 def import_components(config: DashboardConfig):
-    atomic_write(CONFIG, config.model_dump())
+    with CONFIG_LOCK:
+        atomic_write(CONFIG, config.model_dump())
     return config
+
+@app.post('/api/components/register', response_model=DashboardConfig, status_code=201)
+def register_components(upload: ComponentRegistration):
+    with CONFIG_LOCK:
+        config = read_config()
+        ids = [c.id for c in upload.components]
+        if len(set(ids)) != len(ids):
+            raise HTTPException(409, '上傳檔案的組件 ID 重複')
+        existing = {c.id for c in config.components}
+        conflicts = existing.intersection(ids)
+        if conflicts:
+            raise HTTPException(409, '組件 ID 已註冊：' + ', '.join(sorted(conflicts)))
+        if len(config.components) + len(upload.components) > 100:
+            raise HTTPException(422, '最多可註冊 100 個組件')
+        config.components.extend(upload.components)
+        atomic_write(CONFIG, config.model_dump())
+        return config
 
 @app.get('/api/layout', response_model=Layout)
 def get_layout():
