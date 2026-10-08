@@ -8,7 +8,7 @@ const channel='BroadcastChannel' in window?new BroadcastChannel('olit-dashboard'
 function node(tag,className,text){const n=document.createElement(tag);if(className)n.className=className;if(text!==undefined)n.textContent=String(text);return n}
 function message(s){status.textContent=s}
 async function api(url,options={}){
- const r=await fetch(url,options);if(!r.ok){let detail;try{detail=(await r.json()).detail}catch{}throw Error(typeof detail==='string'?detail:'JSON 資料格式不正確或 API 失敗（'+r.status+'）')}return r.json();
+ const r=await fetch(url,options);if(!r.ok){let detail;try{detail=(await r.json()).detail}catch{}const fieldError=Array.isArray(detail)?detail.find(e=>typeof e.msg==='string')?.msg:null;throw Error(typeof detail==='string'?detail:fieldError?fieldError.replace(/^Value error, /,''):'JSON 資料格式不正確或 API 失敗（'+r.status+'）')}return r.json();
 }
 function drawBody(c,body){
  body.replaceChildren();const d=c.data||{};

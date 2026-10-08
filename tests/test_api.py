@@ -47,3 +47,35 @@ def test_invalid_config_and_stale_layout(client):
     cfg['widgets']=[w for w in cfg['widgets'] if w['component']!='map']
     assert client.put('/api/components',json=cfg).status_code==200
     assert client.get('/api/layout').status_code==409
+
+@pytest.mark.parametrize('kind,data',[
+    ('list',{'items':[None]}),
+    ('list',{'items':{'label':'P01'}}),
+    ('list',{'items':[{'label':{'name':'P01'},'value':'normal'}]}),
+    ('bar',{'values':[10,'twenty']}),
+    ('bar',{'values':[10,True]}),
+    ('bar',{'values':[10,20],'labels':'Monday'}),
+    ('metric',{'value':{'count':128}}),
+    ('text',{'text':['invalid']}),
+])
+def test_invalid_component_data_preserves_configuration(client,kind,data):
+    before=client.get('/api/components').json()
+    file_before=main.CONFIG.read_bytes()
+    bad=json.loads(json.dumps(before))
+    bad['components'][0].update(type=kind,data=data)
+    response=client.put('/api/components',json=bad)
+    assert response.status_code==422
+    assert main.CONFIG.read_bytes()==file_before
+    assert client.get('/api/components').json()==before
+
+@pytest.mark.parametrize('kind,data',[
+    ('list',{'items':[{'label':'P01','value':'normal'},{'label':'count','value':3}]}),
+    ('bar',{'values':[0,12.5,-3],'labels':['A','B','C']}),
+    ('metric',{'value':'pending','unit':'status'}),
+    ('text',{'text':'line one\nline two'}),
+])
+def test_valid_component_data_round_trips(client,kind,data):
+    cfg=client.get('/api/components').json()
+    cfg['components'][0].update(type=kind,data=data)
+    assert client.put('/api/components',json=cfg).status_code==200
+    assert client.get('/api/components').json()['components'][0]['data']==data

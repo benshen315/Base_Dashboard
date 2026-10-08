@@ -28,6 +28,37 @@ class Component(BaseModel):
 
     @model_validator(mode='after')
     def valid_data(self):
+        def fail(message):
+            raise ValueError(f'「{self.title}」：{message}')
+
+        def number(value):
+            return isinstance(value, (int, float)) and not isinstance(value, bool) and -1.7976931348623157e308 <= value <= 1.7976931348623157e308
+
+        def scalar(value):
+            return value is None or isinstance(value, (str, bool)) or number(value)
+
+        text_fields = {'metric': ('unit', 'description'), 'text': ('text',), 'map': ('caption',)}
+        for field in text_fields.get(self.type, ()):
+            if field in self.data and not isinstance(self.data[field], str):
+                fail(f'{field} 必須是文字')
+        if self.type == 'metric' and 'value' in self.data:
+            value = self.data['value']
+            if value is not None and not (isinstance(value, str) or number(value)):
+                fail('value 必須是數字或文字')
+        if self.type == 'list':
+            items = self.data.get('items', [])
+            if not isinstance(items, list):
+                fail('items 必須是清單陣列')
+            for item in items:
+                if not isinstance(item, dict) or any(not scalar(item.get(field)) for field in ('label', 'value')):
+                    fail('清單每一筆必須是物件，label/value 使用文字或單一數值')
+        if self.type == 'bar':
+            values = self.data.get('values', [])
+            labels = self.data.get('labels', [])
+            if not isinstance(values, list) or any(not number(value) for value in values):
+                fail('values 必須是有限數字的陣列')
+            if not isinstance(labels, list) or any(not isinstance(label, str) for label in labels):
+                fail('labels 必須是文字陣列')
         if self.type == 'iframe':
             url = self.data.get('url', '')
             if not isinstance(url, str) or not (url.startswith('/') and not url.startswith('//') or url.startswith('https://') or url.startswith('http://')):

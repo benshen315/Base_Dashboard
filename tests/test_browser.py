@@ -136,3 +136,18 @@ def test_drag_to_popout_zone(page,server):
     else:
         item(page).get_by_role('button',name='收回組件').click()
     expect(item(page).locator('.map')).to_be_visible(timeout=5000)
+
+def test_invalid_json_import_keeps_dashboard_usable(page,server,tmp_path):
+    original=open_dashboard(page,server)
+    bad=json.loads(json.dumps(original))
+    bad['components'][0].update(type='list',data={'items':[None]})
+    path=tmp_path/'invalid.json';path.write_text(json.dumps(bad))
+    page.locator('#file').set_input_files(path)
+    expect(page.locator('#status')).to_contain_text('清單每一筆必須是物件')
+    expect(page.locator('.grid-stack-item')).to_have_count(6)
+    expect(item(page).locator('.map')).to_be_visible()
+    assert page.request.get(server+'/api/components').json()['components']==[
+        {**component,'fullscreen':True,'popout':True} for component in original['components']
+    ]
+    page.locator('#catalog').select_option('note');page.locator('#add').click()
+    expect(page.locator('.grid-stack-item')).to_have_count(7)
