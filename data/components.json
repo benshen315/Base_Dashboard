@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "title": "Base Dashboard",
+  "components": [
+    {
+      "id": "map",
+      "title": "場域地圖（示意）",
+      "type": "map",
+      "data": {
+        "caption": "可替換為 iframe 顯示 Three.js / Cesium Viewer"
+      }
+    },
+    {
+      "id": "models",
+      "title": "模型資產",
+      "type": "metric",
+      "data": {
+        "value": 128,
+        "unit": "個模型",
+        "description": "GLB / glTF · 示意資料"
+      }
+    },
+    {
+      "id": "alerts",
+      "title": "告警摘要",
+      "type": "metric",
+      "data": {
+        "value": 3,
+        "unit": "待處理",
+        "description": "示意資料"
+      }
+    },
+    {
+      "id": "trend",
+      "title": "匯入趨勢（示意）",
+      "type": "bar",
+      "data": {
+        "values": [
+          35,
+          60,
+          48,
+          83,
+          65,
+          95,
+          75
+        ],
+        "labels": [
+          "一",
+          "二",
+          "三",
+          "四",
+          "五",
+          "六",
+          "日"
+        ]
+      }
+    },
+    {
+      "id": "objects",
+      "title": "Object 對應",
+      "type": "list",
+      "data": {
+        "items": [
+          {
+            "label": "橋墩 P01",
+            "value": "已對應"
+          },
+          {
+            "label": "箱梁 S02",
+            "value": "已對應"
+          },
+          {
+            "label": "基礎 F03",
+            "value": "待設定"
+          }
+        ]
+      }
+    },
+    {
+      "id": "note",
+      "title": "工作備註",
+      "type": "text",
+      "data": {
+        "text": "組件由 JSON 定義。\n按全螢幕放大，按獨立視窗移至另一個網頁。\n也可把標題列拖到頁面下方的獨立視窗區。"
+      }
+    }
+  ],
+  "widgets": [
+    {
+      "id": "map",
+      "component": "map",
+      "x": 0,
+      "y": 0,
+      "w": 8,
+      "h": 3
+    },
+    {
+      "id": "models",
+      "component": "models",
+      "x": 8,
+      "y": 0,
+      "w": 4,
+      "h": 2
+    },
+    {
+      "id": "alerts",
+      "component": "alerts",
+      "x": 8,
+      "y": 2,
+      "w": 4,
+      "h": 2
+    },
+    {
+      "id": "trend",
+      "component": "trend",
+      "x": 0,
+      "y": 3,
+      "w": 4,
+      "h": 3
+    },
+    {
+      "id": "objects",
+      "component": "objects",
+      "x": 4,
+      "y": 3,
+      "w": 4,
+      "h": 3
+    },
+    {
+      "id": "note",
+      "component": "note",
+      "x": 8,
+      "y": 4,
+      "w": 4,
+      "h": 2
+    }
+  ]
+}
