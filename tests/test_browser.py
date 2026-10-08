@@ -39,6 +39,7 @@ def open_dashboard(page,server):
     assert page.request.put(server+'/api/components',data=cfg).ok
     page.goto(server)
     expect(page.locator('.grid-stack-item')).to_have_count(6)
+    page.wait_for_function('Math.abs(document.querySelector("[gs-id=map]").getBoundingClientRect().height - 264) < 1')
     return cfg
 
 def item(page,id='map'):
