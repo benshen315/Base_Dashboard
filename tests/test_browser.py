@@ -235,3 +235,33 @@ def test_app_desktop_launcher_and_mobile(page,server):
     page.screenshot(path='test-results/app-mobile.png',full_page=True)
     page.locator('#menu-open').click()
     expect(page.locator('#component-menu')).to_be_visible()
+
+
+def test_component_manager_rename_cancel_and_popout_sync(page,server):
+    open_dashboard(page,server)
+    before=page.evaluate('layout()')
+    with page.expect_popup() as info:item(page,'note').get_by_role('button',name='獨立視窗',exact=True).click()
+    popup=info.value
+    expect(popup.locator('.panel-title')).to_have_text('工作備註')
+    page.get_by_role('button',name='組件管理',exact=True).click()
+    expect(page.locator('#menu-title')).to_have_text('組件管理')
+    row=page.locator('.registry-row[data-component="note"]')
+    row.get_by_role('button',name='改名',exact=True).click()
+    row.get_by_role('textbox',name='組件名稱').fill('Cancelled')
+    row.get_by_role('button',name='取消',exact=True).click()
+    expect(row).to_contain_text('工作備註')
+    row.get_by_role('button',name='改名',exact=True).click()
+    row.get_by_role('textbox',name='組件名稱').fill('   ')
+    row.get_by_role('button',name='儲存名稱',exact=True).click()
+    expect(row.locator('.rename-error')).to_have_text('組件名稱不可空白')
+    row.get_by_role('textbox',name='組件名稱').fill('我的新筆記')
+    row.get_by_role('button',name='儲存名稱',exact=True).click()
+    expect(page.locator('#menu-status')).to_have_text('已更新組件名稱。')
+    expect(row).to_contain_text('我的新筆記')
+    expect(item(page,'note').locator('.panel-title')).to_have_text('我的新筆記')
+    expect(popup.locator('.panel-title')).to_have_text('我的新筆記')
+    assert page.evaluate('layout()')==before
+    popup.close()
+    page.locator('#menu-close').click()
+    page.reload()
+    expect(page.locator('.app-tile[data-component="note"]')).to_contain_text('我的新筆記')

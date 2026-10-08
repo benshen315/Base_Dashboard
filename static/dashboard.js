@@ -62,7 +62,7 @@ function popout(id){
  detached.set(id,{win});pendingPopup=null;$('#retry-popup').hidden=true;
  const body=el.querySelector('.body');body.replaceChildren();const placeholder=node('div','detached');placeholder.append(node('p','','此組件已移至獨立視窗'),button('切換至視窗',()=>win.focus()),button('收回組件',()=>{closeDetached(id);restore(id)}));body.append(placeholder);message('已開啟獨立視窗，可手動移到另一個螢幕。');
 }
-if(channel)channel.onmessage=e=>{const d=e.data;if(d?.action==='return'&&d.owner===owner){closeDetached(d.instance);restore(d.instance)}};
+if(channel)channel.onmessage=e=>{const d=e.data;if(d?.action==='rename'&&typeof d.id==='string'&&typeof d.title==='string'){const c=catalog.get(d.id);if(c){c.title=d.title;updateTitles();if(!singleId)renderLauncher()}return}if(d?.action==='return'&&d.owner===owner){closeDetached(d.instance);restore(d.instance)}};
 setInterval(()=>{for(const [id,state]of detached){if(state.win.closed)restore(id)}},800);
 window.addEventListener('pagehide',()=>{for(const id of detached.keys())closeDetached(id)});
 $('#retry-popup').onclick=()=>{if(pendingPopup)popout(pendingPopup)};
@@ -101,9 +101,29 @@ function renderLauncher(){
 let pendingComponents=null,registering=false;
 function downloadJSON(value,name){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const a=node('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function addRegistered(id){if(locked){message('請先解鎖版面。');return}showView('workspace');add({id:id+'-'+(crypto.randomUUID?crypto.randomUUID():Date.now()),component:id,w:4,h:3});syncLock();message('已加入組件，保存版面後可在重新整理時還原。')}
+function updateTitles(){
+ document.querySelectorAll('.grid-stack-item').forEach(el=>{const c=catalog.get(el.dataset.component);if(c)el.querySelector('.panel-title').textContent=c.title});
+ if(singleId&&catalog.has(singleId)){$('#title').textContent=catalog.get(singleId).title;const title=$('#single .panel-title');if(title)title.textContent=catalog.get(singleId).title}
+}
 function refreshRegistry(){
  $('#component-count').textContent='（'+catalog.size+'）';
- $('#registered-components').replaceChildren(...Array.from(catalog.values(),c=>{const row=node('div','registry-row');const label=node('div');label.append(node('strong','',c.title),node('small','muted',c.id+' · '+c.type));const b=button('加入工作台',()=>{addRegistered(c.id);$('#component-menu').close()});b.disabled=locked;row.append(label,b);return row}));
+ $('#registered-components').replaceChildren(...Array.from(catalog.values(),c=>{
+  const row=node('div','registry-row');row.dataset.component=c.id;
+  const label=node('div','registry-label');label.append(node('strong','',c.title),node('small','muted',c.id+' · '+c.type));
+  const actions=node('div','registry-actions');const addButton=button('加入工作台',()=>{addRegistered(c.id);$('#component-menu').close()});addButton.disabled=locked;
+  const rename=button('改名',()=>{
+   const form=node('form','rename-form');const input=node('input');input.type='text';input.value=c.title;input.maxLength=200;input.required=true;input.setAttribute('aria-label','組件名稱');
+   const save=node('button','primary','儲存名稱');save.type='submit';const cancel=button('取消',()=>refreshRegistry());
+   const error=node('p','rename-error');error.setAttribute('role','status');
+   form.append(input,save,cancel,error);row.replaceChildren(form);input.focus();input.select();
+   form.onsubmit=async e=>{
+    e.preventDefault();if(!input.value.trim()){error.textContent='組件名稱不可空白';input.focus();return}
+    save.disabled=true;cancel.disabled=true;input.disabled=true;
+    try{const data=await api('/api/components/'+encodeURIComponent(c.id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:input.value.trim()})});setConfig(data);updateTitles();refreshRegistry();$('#menu-status').textContent='已更新組件名稱。';message('組件已改名。');if(channel)channel.postMessage({action:'rename',id:c.id,title:catalog.get(c.id).title})}
+    catch(e){error.textContent=e.message;save.disabled=false;cancel.disabled=false;input.disabled=false}
+   };
+  });actions.append(rename,addButton);row.append(label,actions);return row;
+ }));
 }
 function initMenu(){
  $('#menu-open').onclick=()=>{refreshRegistry();$('#component-menu').showModal()};

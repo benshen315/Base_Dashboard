@@ -106,6 +106,16 @@ class DashboardConfig(BaseModel):
 class ComponentRegistration(BaseModel):
     components: Annotated[list[Component], Field(min_length=1, max_length=100)]
 
+class ComponentRename(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+
+    @model_validator(mode='after')
+    def meaningful_title(self):
+        self.title = self.title.strip()
+        if not self.title:
+            raise ValueError('組件名稱不可空白')
+        return self
+
 def atomic_write(path, value):
     temp = None
     try:
@@ -156,6 +166,17 @@ def register_components(upload: ComponentRegistration):
         if len(config.components) + len(upload.components) > 100:
             raise HTTPException(422, '最多可註冊 100 個組件')
         config.components.extend(upload.components)
+        atomic_write(CONFIG, config.model_dump())
+        return config
+
+@app.patch('/api/components/{component_id}', response_model=DashboardConfig)
+def rename_component(component_id: str, update: ComponentRename):
+    with CONFIG_LOCK:
+        config = read_config()
+        component = next((c for c in config.components if c.id == component_id), None)
+        if component is None:
+            raise HTTPException(404, '組件不存在')
+        component.title = update.title
         atomic_write(CONFIG, config.model_dump())
         return config
 

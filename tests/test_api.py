@@ -105,3 +105,23 @@ def test_registration_failure_is_atomic(client,components,status):
     before=main.CONFIG.read_bytes()
     assert client.post('/api/components/register',json={'components':components}).status_code==status
     assert main.CONFIG.read_bytes()==before
+
+
+def test_rename_preserves_identity_content_and_layout(client):
+    before=client.get('/api/components').json()
+    client.put('/api/layout',json={'widgets':before['widgets']})
+    saved=main.LAYOUT.read_bytes()
+    response=client.patch('/api/components/note',json={'title':'  Renamed note  '})
+    assert response.status_code==200
+    after=client.get('/api/components').json()
+    expected=json.loads(json.dumps(before))
+    next(c for c in expected['components'] if c['id']=='note')['title']='Renamed note'
+    assert after==expected
+    assert main.LAYOUT.read_bytes()==saved
+    assert client.get('/widget/note').status_code==200
+
+@pytest.mark.parametrize('id,title,status',[('missing','Name',404),('note','   ',422),('note','x'*201,422)])
+def test_invalid_rename_preserves_file(client,id,title,status):
+    before=main.CONFIG.read_bytes()
+    assert client.patch('/api/components/'+id,json={'title':title}).status_code==status
+    assert main.CONFIG.read_bytes()==before
