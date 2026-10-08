@@ -9,6 +9,7 @@ Python 3.11+，無需 Node.js / npm。GridStack 10.3.1 隨專案存放於 static
 - [專案基線與目前邊界](document/PROJECT_BASELINE.md)
 - [JSON 組件格式與擴充方式](document/COMPONENT_GUIDE.md)
 - [後端模型 JSON Schema](document/dashboard.schema.json)
+- [網址驗收部署設定](document/DEPLOYMENT.md)
 
 ## 啟動
 

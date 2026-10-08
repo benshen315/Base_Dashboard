@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: base-dashboard-preview
+    runtime: python
+    plan: free
+    region: singapore
+    repo: https://github.com/benshen315/Base_Dashboard
+    branch: main
+    buildCommand: python -m pip install -r requirements.txt
+    startCommand: python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/components
+    autoDeployTrigger: 'off'
