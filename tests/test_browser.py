@@ -72,7 +72,7 @@ def test_drag_resize_and_save_restore(page,server):
     assert card.bounding_box()['width']>old_width
     page.locator('#save').click();expect(page.locator('#status')).to_contain_text('版面已保存')
     saved=page.request.get(server+'/api/layout').json()
-    page.locator('#reset').click();page.locator('#load').click();expect(page.locator('#status')).to_contain_text('已還原')
+    page.locator('#reset').click();page.locator('#load').click();expect(page.locator('#status')).to_have_text('已還原伺服器版面。')
     current=page.evaluate('grid.save(false).map(({id,x,y,w,h})=>({id,component:findItem(id).dataset.component,x,y,w,h}))')
     assert sorted(current,key=lambda w:w['id'])==sorted(saved['widgets'],key=lambda w:w['id'])
 
