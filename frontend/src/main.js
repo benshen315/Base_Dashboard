@@ -4,5 +4,6 @@ import PrimeVue from 'primevue/config';
 import Aura from '@primeuix/themes/aura';
 import 'primeicons/primeicons.css';
 import './style.css';
+import './iphone.css';
 import App from './App.vue';
 createApp(App).use(createPinia()).use(PrimeVue,{theme:{preset:Aura,options:{darkModeSelector:'.dark-theme'}}}).mount('#app');
