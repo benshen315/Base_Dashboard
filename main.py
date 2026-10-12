@@ -16,7 +16,7 @@ DATA.mkdir(exist_ok=True)
 LAYOUT = DATA / 'layout.json'
 CONFIG = DATA / 'components.json'
 CONFIG_LOCK = Lock()
-app = FastAPI(title='Base Dashboard', version='0.1')
+app = FastAPI(title='OlitGlobal Web OS / Base Dashboard', version='0.2.0')
 app.mount('/static', StaticFiles(directory=BASE / 'static'), name='static')
 Identifier = Annotated[str, Field(min_length=1, max_length=100, pattern=r'^[A-Za-z0-9_-]+$')]
 
@@ -30,6 +30,8 @@ class Component(BaseModel):
 
     @model_validator(mode='after')
     def valid_data(self):
+        if self.id in {'dashboard', 'manager', 'settings'}:
+            raise ValueError('此 ID 保留給系統 APP')
         def fail(message):
             raise ValueError(f'「{self.title}」：{message}')
 
@@ -135,12 +137,39 @@ def read_config():
     except (OSError, ValueError):
         raise HTTPException(500, 'components.json 無法讀取或格式不正確')
 
-@app.get('/', include_in_schema=False)
+@app.get('/legacy', include_in_schema=False)
 @app.get('/widget/{component_id}', include_in_schema=False)
 def index(component_id: str | None = None):
     if component_id and component_id not in {c.id for c in read_config().components}:
         raise HTTPException(404, '組件不存在')
     return FileResponse(BASE / 'static' / 'index.html')
+
+@app.get('/', include_in_schema=False)
+def desktop():
+    built = BASE / 'static' / 'os' / 'index.html'
+    if not built.exists():
+        raise HTTPException(503, 'Web OS 尚未建置；請在 frontend 執行 pnpm install 與 pnpm build')
+    return FileResponse(built)
+
+if (BASE / 'static' / 'os').exists():
+    app.mount('/os', StaticFiles(directory=BASE / 'static' / 'os'), name='web-os')
+
+@app.get('/api/health')
+def health():
+    return {'status': 'ok', 'version': '0.2.0'}
+
+@app.delete('/api/components/{component_id}', response_model=DashboardConfig)
+def delete_component(component_id: str):
+    with CONFIG_LOCK:
+        config = read_config()
+        if component_id not in {c.id for c in config.components}:
+            raise HTTPException(404, '組件不存在')
+        if len(config.components) == 1:
+            raise HTTPException(409, '至少保留一個組件')
+        config.components = [c for c in config.components if c.id != component_id]
+        config.widgets = [w for w in config.widgets if w.component != component_id]
+        atomic_write(CONFIG, config.model_dump())
+        return config
 
 @app.get('/api/components', response_model=DashboardConfig)
 def components():

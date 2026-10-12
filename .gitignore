@@ -6,3 +6,5 @@ data/layout.json
 
 .pytest_cache/
 test-results/
+frontend/node_modules/
+data/os-state.json

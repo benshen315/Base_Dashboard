@@ -37,7 +37,7 @@ def open_dashboard(page,server):
     page.set_viewport_size({'width':1440,'height':1200})
     cfg=json.loads((ROOT/'dashboard.example.json').read_text())
     assert page.request.put(server+'/api/components',data=cfg).ok
-    page.goto(server)
+    page.goto(server+'/legacy')
     page.locator('#workspace-tab').click()
     expect(page.locator('.grid-stack-item')).to_have_count(6)
     page.wait_for_function('Math.abs(document.querySelector("[gs-id=map]").getBoundingClientRect().height - 264) < 1')

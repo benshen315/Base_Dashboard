@@ -1,4 +1,8 @@
-# Base Dashboard v0.1
+# OlitGlobal Web OS v0.2
+
+新版首頁提供 iOS 風格 APP 桌面、Dock、右鍵／長按選單、多視窗與組件管理。原儀表板移至 `/legacy`。新版操作與開發方式見 [驗收說明](document/WEB_OS_ACCEPTANCE.md)。以下保留原儀表板文件。
+
+## Base Dashboard v0.1 相容入口
 
 可重用的儀表板基礎專案，採 FastAPI + 原生 HTML/CSS/JavaScript + GridStack。
 

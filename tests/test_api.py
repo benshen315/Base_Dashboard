@@ -125,3 +125,23 @@ def test_invalid_rename_preserves_file(client,id,title,status):
     before=main.CONFIG.read_bytes()
     assert client.patch('/api/components/'+id,json={'title':title}).status_code==status
     assert main.CONFIG.read_bytes()==before
+
+def test_delete_component_and_unknown_id(client):
+    before=client.get('/api/components').json()
+    assert client.delete('/api/components/note').status_code==200
+    after=client.get('/api/components').json()
+    assert all(c['id']!='note' for c in after['components'])
+    assert all(w['component']!='note' for w in after['widgets'])
+    assert client.get('/widget/note').status_code==404
+    assert client.delete('/api/components/missing').status_code==404
+    assert len(after['components'])==len(before['components'])-1
+
+def test_last_component_cannot_be_deleted(client):
+    client.put('/api/components',json={'components':[{'id':'only','title':'Only','type':'text'}],'widgets':[]})
+    assert client.delete('/api/components/only').status_code==409
+    assert client.get('/api/health').json()['version']=='0.2.0'
+
+def test_reserved_system_app_id(client):
+    before=main.CONFIG.read_bytes()
+    assert client.post('/api/components/register',json={'components':[{'id':'manager','title':'Conflict','type':'text'}]}).status_code==422
+    assert main.CONFIG.read_bytes()==before
