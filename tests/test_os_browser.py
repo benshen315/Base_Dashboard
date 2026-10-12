@@ -7,7 +7,7 @@ def start(page,server):
     page.goto(server)
     expect(page.get_by_test_id('app-dashboard')).to_be_visible()
 
-def test_windows_context_dock_and_geometry(page,server):
+def test_windows_context_and_geometry(page,server):
     errors=[]
     page.on('pageerror',lambda error:errors.append(str(error)))
     start(page,server)
@@ -35,9 +35,8 @@ def test_windows_context_dock_and_geometry(page,server):
     page.get_by_test_id('app-note').click(button='right')
     page.get_by_text('開啟新視窗',exact=True).click()
     page.get_by_role('button',name='顯示桌面',exact=True).click()
-    page.get_by_test_id('app-note').click(button='right');page.get_by_text('加入 Dock',exact=True).click()
-    expect(page.get_by_role('button',name='Dock 工作備註',exact=True)).to_be_visible()
-    page.reload();expect(page.get_by_role('button',name='Dock 工作備註',exact=True)).to_be_visible()
+    expect(page.get_by_role('navigation',name='Dock',exact=True)).to_have_count(0)
+    page.reload();expect(page.get_by_role('navigation',name='Dock',exact=True)).to_have_count(0)
     page.get_by_test_id('app-dashboard').click()
     page.screenshot(path='test-results/app-os-desktop.png')
     assert not errors
@@ -60,7 +59,7 @@ def test_mobile_long_press_and_switch(page,server,browser):
     mobile=context.new_page();mobile.goto(server)
     icon=mobile.get_by_test_id('app-note');expect(icon).to_be_visible()
     icon.dispatch_event('pointerdown',{'pointerType':'touch','clientX':150,'clientY':500,'pageX':150,'pageY':500})
-    expect(mobile.get_by_text('加入 Dock',exact=True)).to_be_visible(timeout=3000)
+    expect(mobile.get_by_text('管理此組件',exact=True)).to_be_visible(timeout=3000)
     icon.dispatch_event('pointerup',{'pointerType':'touch'})
     expect(mobile.locator('.os-window')).to_have_count(0)
     mobile.get_by_text('開啟',exact=True).click()
