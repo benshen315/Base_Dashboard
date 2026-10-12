@@ -6,7 +6,7 @@ import {GridComponent,TooltipComponent} from 'echarts/components';
 import {CanvasRenderer} from 'echarts/renderers';
 use([BarChart,GridComponent,TooltipComponent,CanvasRenderer]);
 const props=defineProps({component:Object});const graph=ref(null);let chart,observer;
-async function render(){await nextTick();if(props.component.type!=='bar'||!graph.value)return;chart||=init(graph.value);chart.setOption({grid:{left:40,right:20,top:30,bottom:35},tooltip:{trigger:'axis'},xAxis:{type:'category',data:props.component.data.labels||[]},yAxis:{type:'value',splitLine:{lineStyle:{color:'#e7edf5'}}},series:[{type:'bar',data:props.component.data.values||[],itemStyle:{color:'#5485ef',borderRadius:[7,7,0,0]},barMaxWidth:36}]});}
+async function render(){await nextTick();if(props.component.type!=='bar'||!graph.value)return;chart||=init(graph.value);chart.setOption({grid:{left:40,right:20,top:30,bottom:35},tooltip:{trigger:'axis',backgroundColor:'#122235',borderColor:'#35516a',textStyle:{color:'#d9e6f5'}},xAxis:{type:'category',axisLabel:{color:'#a6bdd3'},axisLine:{lineStyle:{color:'#35516a'}},data:props.component.data.labels||[]},yAxis:{type:'value',axisLabel:{color:'#a6bdd3'},splitLine:{lineStyle:{color:'#26394e'}}},series:[{type:'bar',data:props.component.data.values||[],itemStyle:{color:'#50bfe9',borderRadius:[7,7,0,0]},barMaxWidth:36}]});}
 onMounted(()=>{render();observer=new ResizeObserver(()=>chart?.resize());if(graph.value)observer.observe(graph.value)});watch(()=>props.component,render,{deep:true});onBeforeUnmount(()=>{observer?.disconnect();chart?.dispose()});
 </script>
 <template>

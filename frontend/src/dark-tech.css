@@ -1,0 +1,61 @@
+:root { color-scheme: dark; color: #d9e6f5; }
+body { background: #070e1b; }
+.desktop { background-color: #070e1b; background-image: radial-gradient(ellipse at 85% 10%, #087e9e25, transparent 48%), radial-gradient(ellipse at 12% 90%, #2154a826, transparent 55%), linear-gradient(135deg, #080f20, #0b192a 65%, #0a1824); }
+.desktop::before { background-image: linear-gradient(#4ed4ff06 1px, transparent 1px), linear-gradient(90deg, #4ed4ff06 1px, transparent 1px); background-size: 52px 52px; mask-image: linear-gradient(transparent, #000 75%); }
+.desktop.dusk { background-image: radial-gradient(ellipse at 85% 15%, #6b45be25, transparent 55%), linear-gradient(140deg, #0b1021, #1b1530, #111728); }
+.menubar { background: #060d19b8; border-color: #28415970; }
+.brand-mark { color: #71d6f8; }
+.status-dot { background: #52e5c4; box-shadow: 0 0 8px #52e5c470; }
+.search-box { background: #101f31; border-color: #2c4560; }
+.workspace-summary { background: #0d1c2cb0; border-color: #2a435c; box-shadow: inset 0 1px #4ed4ff0a; }
+.workspace-summary i { color: #59c7ed; }
+.workspace-summary span, .workspace-summary small { color: #93a9bf; }
+.icon-tile { box-shadow: inset 0 1px #b3e7ff28, 0 8px 22px #0005; border: 1px solid #87dbff24; }
+.blue { background: linear-gradient(145deg, #184b7d, #143252); }
+.violet { background: linear-gradient(145deg, #51417e, #2b2550); }
+.slate { background: linear-gradient(145deg, #43566b, #223246); }
+.teal { background: linear-gradient(145deg, #14647a, #143749); }
+.green { background: linear-gradient(145deg, #1c6b65, #163e3e); }
+.orange { background: linear-gradient(145deg, #855837, #483421); }
+.yellow { background: linear-gradient(145deg, #827243, #49422a); }
+.red { background: linear-gradient(145deg, #844153, #4c273b); }
+.icon-tile > i { color: #e1f3ff; text-shadow: 0 0 14px #9edbff30; }
+.badge { background: #dc5373; border-color: #112033; }
+.dock { background: #0e1d30d9; border-color: #3e607a; box-shadow: 0 12px 34px #0006, inset 0 1px #71d6f81a; }
+.dock-divider { background: #3b5269; }
+.task-item { border-color: #45647d; background: #132b40; color: #cce8ff; }
+.task-item.selected { background: #214c68; border-color: #66c9ec; }
+.os-window { background: #0e1929; color: #d9e6f5; border-color: #30485f; box-shadow: 0 26px 80px #0008; }
+.os-window.active { border-color: #426886; box-shadow: 0 26px 80px #0009, 0 0 0 1px #54ceff0a; }
+.window-titlebar { background: #122235; border-color: #2a3e53; }
+.window-titlebar > span > i { color: #69bedf; }
+.window-count { color: #88a4be; }
+.muted, .metric p { color: #96abc1; }
+.feedback { color: #77d1ed; }
+.component-row { border-color: #293c50; }
+.component-row small { color: #90a7bd; }
+.delete-confirm { background: #3c2030; color: #ffd0d9; }
+.metric strong { color: #68d0f7; text-shadow: 0 0 30px #39b6e61a; }
+.note-content { background: linear-gradient(#122030, #101a29); }
+.note-content > i { color: #d7bd7c; }
+.object-list > div { border-color: #293d52; }
+.object-list i { color: #6baed0; }
+.object-list b { color: #76d6be; }
+.map-preview { background: linear-gradient(32deg, #142f35 30%, #173d57 30%, #173d57 40%, #1b303a 40%); }
+.map-grid { background-image: linear-gradient(#7bb4c51c 2px, transparent 2px), linear-gradient(90deg, #7bb4c51c 2px, transparent 2px); }
+.marker { color: #64d9ff; filter: drop-shadow(0 0 8px #39c4ff66); }
+.map-caption { background: #091725e6; color: #a6c7dc; border: 1px solid #35516a; }
+.overview-card { background: #122134; border-color: #2b425a; color: #d9e6f5; }
+.overview-card > h3 { color: #94b3ce; }
+.wallpaper-option { background: linear-gradient(140deg, #071327, #143347); border-color: #31475a; }
+.wallpaper-option.dusk { background: linear-gradient(140deg, #0c1125, #302341); }
+.wallpaper-option.selected { border-color: #66cdef; }
+.p-contextmenu { box-shadow: 0 12px 36px #0007; }
+@media (max-width: 640px) {
+  .iphone-app-header { background: #101f31; border-color: #293e53; }
+  .iphone-app-header button { color: #71ccf3; }
+  .iphone-navigation.in-app { background: #0e1929; color: #bfdcef; border-color: #293e53; }
+  .iphone-switcher { background: #081626f2; }
+  .recent-grid article { background: #13263ab0; border-color: #365670; }
+  .recent-close { background: #263d53; }
+}
